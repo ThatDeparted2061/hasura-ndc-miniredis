@@ -1,0 +1,23 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with: { repository: ThatDeparted2061/mini-redis-go, path: mini-redis-go }
+      - uses: actions/setup-go@v5
+        with: { go-version-file: mini-redis-go/go.mod }
+      - name: Start mini-redis-go
+        run: |
+          (cd mini-redis-go && go build -o ../mini-redis ./cmd/server)
+          ./mini-redis --port 6380 --appendonly=false &
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test --release
+      - run: cargo run --release --bin seed -- redis://127.0.0.1:6380 500 2000
+      - name: Hasura ndc-test
+        run: |
+          cargo run --release -- test --configuration config | tee ndc-test.txt
+          ! grep -q FAIL ndc-test.txt
