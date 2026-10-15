@@ -1,0 +1,42 @@
+# docker compose up --build, then open http://localhost:3280/graphql
+services:
+  redis:
+    build:
+      context: https://github.com/ThatDeparted2061/mini-redis-go.git#main
+      dockerfile: deploy/Dockerfile
+    command: ["--port", "6380", "--appendonly=false"]
+    ports: ["6380:6380"]
+
+  seed:
+    build: .
+    entrypoint: ["seed", "redis://redis:6380", "10000", "50000"]
+    depends_on: [redis]
+    restart: on-failure
+
+  connector:
+    build: .
+    ports: ["8100:8100"]
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+
+  metadata:  # writes the engine's metadata from the same configuration the connector serves
+    build: .
+    entrypoint: ["sh", "-c", "metadata /etc/connector http://connector:8100 > /engine/metadata.json"]
+    volumes: ["engine:/engine"]
+
+  engine:
+    image: ghcr.io/hasura/v3-engine:latest
+    command: ["--metadata-path", "/engine/metadata.json", "--authn-config-path", "/app/auth_config.json"]
+    ports: ["3280:3000"]
+    volumes:
+      - engine:/engine
+      - ./engine/auth_config.json:/app/auth_config.json:ro
+    depends_on:
+      connector:
+        condition: service_started
+      metadata:
+        condition: service_completed_successfully
+
+volumes:
+  engine:
