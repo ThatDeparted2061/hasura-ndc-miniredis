@@ -1204,6 +1204,7 @@ dependencies = [
  "ndc-sdk",
  "prometheus",
  "redis",
+ "reqwest 0.13.5",
  "serde",
  "serde_json",
  "tokio",
