@@ -1,0 +1,15 @@
+{
+  "redis_url": "redis://127.0.0.1:6380",
+  "collections": {
+    "users": {
+      "description": "Customers, one hash per user (user:<id>)",
+      "key_prefix": "user:",
+      "columns": { "name": "String", "email": "String", "city": "String", "age": "Int", "score": "Float", "active": "Boolean" }
+    },
+    "orders": {
+      "description": "Orders, one hash per order (order:<id>)",
+      "key_prefix": "order:",
+      "columns": { "user_id": "String", "status": "String", "total": "Float", "items": "Int" }
+    }
+  }
+}
